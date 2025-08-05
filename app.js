@@ -93,16 +93,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return score;
     }
 
-
     function renderMedications(meds) {
         selectors.loadingIndicator.classList.add('hidden');
-        selectors.medicationList.innerHTML = '';
-        selectors.noResults.classList.toggle('hidden', meds.length > 0);
+        selectors.medicationList.innerHTML = ''; // Clear previous results
+
+        // *** FIX: Correctly show/hide the "no results" message ***
+        if (meds.length === 0) {
+            selectors.noResults.classList.remove('hidden');
+        } else {
+            selectors.noResults.classList.add('hidden');
+        }
+
         meds.forEach(med => {
-            const cardClone = selectors.cardTemplate.content.cloneNode(true);
+            const cardClone = document.getElementById('medication-card-template').content.cloneNode(true);
             const cardElement = cardClone.querySelector('article');
-            cardElement.dataset.medicationName = med.name; 
             
+            // *** FIX: Use a reliable unique identifier to find the correct medication later ***
+            cardElement.dataset.originalIndex = med.originalIndex;
+
             const imageName = encodeURIComponent(`${med.name}\n${med.presentation}`);
             cardElement.querySelector('.card-img').src = `https://placehold.co/400x200/e0f2fe/083344?text=${imageName}&font=inter`;
             cardElement.querySelector('.card-name').textContent = med.name;
@@ -112,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectors.medicationList.appendChild(cardElement);
         });
     }
+
 
     function updateActiveButtons() {
         document.querySelectorAll('#familyFilterContainer .filter-btn').forEach(btn => {
@@ -272,10 +281,10 @@ document.addEventListener('DOMContentLoaded', () => {
         selectors.searchBar.addEventListener('input', debouncedSearch);
 
         selectors.medicationList.addEventListener('click', e => {
-            const card = e.target.closest('[data-medication-name]');
+            const card = e.target.closest('[data-original-index]');
             if (card) {
-                const medName = card.dataset.medicationName;
-                const medication = state.medications.find(m => m.name === medName);
+                const index = parseInt(card.dataset.originalIndex, 10);
+                const medication = state.medications.find(m => m.originalIndex === index);
                 if (medication) openModal(medication);
             }
         });
